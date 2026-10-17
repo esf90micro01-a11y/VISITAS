@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão Territorial e Fichas Domiciliares</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --border-color: #cbd5e1;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #15803d;
+      --danger: #b91c1c;
+      --warning: #b45309;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #172554; }
+    .btn-secondary { background: white; border-color: var(--border-color); color: var(--text); }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-danger { background: #fee2e2; color: var(--danger); border-color: #fca5a5; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+
+    /* Importador Rápido */
+    .paste-card {
+      background: white;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .paste-card h3 {
+      font-size: 0.875rem;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+    .paste-form {
+      display: flex;
+      gap: 8px;
+    }
+    .paste-form input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    /* Abas de Ruas */
+    .tabs-wrapper {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+
+    .tab-item {
+      padding: 8px 16px;
+      background: #e2e8f0;
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-item.active {
+      background: white;
+      color: var(--primary);
+      border-top: 3px solid var(--primary);
+      margin-bottom: -6px;
+      padding-bottom: 10px;
+    }
+
+    .tab-item.inactive {
+      opacity: 0.6;
+      border-left: 3px solid var(--warning);
+    }
+
+    /* Controles da Rua */
+    .street-toolbar {
+      background: white;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Cartão do Domicílio */
+    .domicile-card {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .domicile-header {
+      background: #f1f5f9;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .domicile-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .dom-badge {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--primary);
+    }
+
+    .dom-subbadge {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Tabela de Moradores */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--muted);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    .row-member {
+      background: white;
+    }
+
+    .row-member.is-inactive {
+      opacity: 0.5;
+      background: #fef2f2;
+    }
+
+    .row-health {
+      background: #fafafa;
+    }
+
+    .row-notes {
+      background: #fafafa;
+      border-bottom: 2px solid #cbd5e1;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .tag {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-remove {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Assinatura Familiar */
+    .family-signature {
+      background: #ffffff;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px dashed var(--border-color);
+      gap: 20px;
+    }
+
+    .sig-line {
+      flex: 1;
+      border-bottom: 1px solid #475569;
+      padding-bottom: 4px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .sig-date {
+      width: 180px;
+      border-bottom: 1px solid #475569;
+      padding-bottom: 4px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* Modais */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-box h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .paste-card, .tabs-wrapper, .street-toolbar, .no-print, button { display: none !important; }
+      .domicile-card { page-break-inside: avoid; border: 1px solid #000; margin-bottom: 16px; }
+      th, td { border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>Cadastro Territorial & Fichas Domiciliares</h1>
+      <p style="font-size: 0.8rem; color: var(--muted);">Gerenciamento de Ruas, Residências e Moradores</p>
+    </div>
+    <div style="display: flex; gap: 8px;" class="no-print">
+      <select id="filterStatus" onchange="renderApp()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem;">
+        <option value="ativos">Exibir: Apenas Ativos</option>
+        <option value="todos">Exibir: Todos (incluindo Inativos)</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportData()">💾 Baixar Backup</button>
+      <button class="btn btn-danger btn-sm" onclick="resetToSample()">🔄 Restaurar Padrão</button>
+    </div>
+  </header>
+
+  <!-- Importador Rápido -->
+  <div class="paste-card no-print">
+    <h3>📋 Colagem Rápida Inteligente</h3>
+    <div class="paste-form">
+      <input type="text" id="pasteInput" placeholder="Ex: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768">
+      <button class="btn btn-primary btn-sm" onclick="processQuickPaste()">Processar e Inserir</button>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Aceita formato colado compacto ou linhas copiadas do e-SUS/Excel.</div>
+  </div>
+
+  <!-- Abas de Ruas -->
+  <div class="tabs-wrapper" id="tabsList"></div>
+
+  <!-- Barra da Rua Ativa -->
+  <div class="street-toolbar" id="streetToolbar"></div>
+
+  <!-- Lista de Domicílios -->
+  <div id="domicilesList"></div>
+</div>
+
+<!-- MODAL: RUA -->
+<div class="modal-overlay" id="modalStreet">
+  <div class="modal-box">
+    <h2 id="modalStreetTitle">Cadastrar Rua / Trecho</h2>
+    <input type="hidden" id="streetId">
+    <div class="form-group">
+      <label>Nome do Logradouro / Rua</label>
+      <input type="text" id="streetName" placeholder="Ex: Rua Rafael Garcia">
+    </div>
+    <div class="form-group">
+      <label>Identificação do Trecho (Opcional)</label>
+      <input type="text" id="streetSection" placeholder="Ex: Ímpar 101 a 247">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalStreet')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveStreet()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DOMICÍLIO -->
+<div class="modal-overlay" id="modalDomicile">
+  <div class="modal-box">
+    <h2 id="modalDomicileTitle">Cadastrar Domicílio</h2>
+    <input type="hidden" id="domicileId">
+    <div class="form-group">
+      <label>Nº do Domicílio (Fachada/Porta)</label>
+      <input type="text" id="domicileNumber" placeholder="Ex: 463">
+    </div>
+    <div class="form-group">
+      <label>Código do Domicílio (e-SUS)</label>
+      <input type="text" id="domicileCode" placeholder="Ex: 564768">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalDomicile')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDomicile()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MORADOR -->
+<div class="modal-overlay" id="modalMember">
+  <div class="modal-box">
+    <h2 id="modalMemberTitle">Cadastrar Morador</h2>
+    <input type="hidden" id="memberDomId">
+    <input type="hidden" id="memberId">
+    <div class="form-group">
+      <label>Nome Completo</label>
+      <input type="text" id="memberName" placeholder="Ex: VIVIANE DE MORAIS MATHIAS">
+    </div>
+    <div class="form-group">
+      <label>Data de Nascimento</label>
+      <input type="text" id="memberDob" placeholder="DD/MM/AAAA ou AAAA-MM-DD" oninput="updateMemberAgePreview()">
+      <small id="memberAgePreview" style="color: var(--primary); font-weight: bold;"></small>
+    </div>
+    <div class="form-group">
+      <label>Código do Gestor</label>
+      <input type="text" id="memberManager" placeholder="Ex: 1021443">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalMember')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMember()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ESTRUTURA INICIAL
+  const INITIAL_DATA = [
+    {
+      id: "street_1",
+      name: "Rua Rafael Garcia",
+      section: "Ímpar 101 a 247",
+      active: true,
+      domiciles: [
+        {
+          id: "dom_1",
+          number: "463",
+          code: "564768",
+          active: true,
+          members: [
+            {
+              id: "mem_1",
+              name: "VIVIANE DE MORAIS MATHIAS",
+              dob: "25/02/1983",
+              manager: "1021443",
+              conditions: ["Hipertensão Arterial", "Diabetes Mellitus"],
+              notes: "Faz acompanhamento na UBS e uso diário de medicação.",
+              active: true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: "street_2",
+      name: "Rua Rafael Garcia",
+      section: "Par 212 a 248",
+      active: true,
+      domiciles: []
+    }
+  ];
+
+  let streets = [];
+  let currentStreetId = null;
+
+  function loadState() {
+    const raw = localStorage.getItem("territorial_data_v2");
+    if (raw) {
+      try {
+        streets = JSON.parse(raw);
+      } catch (e) {
+        streets = INITIAL_DATA;
+      }
+    } else {
+      streets = INITIAL_DATA;
+    }
+    if (!currentStreetId && streets.length > 0) {
+      currentStreetId = streets[0].id;
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem("territorial_data_v2", JSON.stringify(streets));
+  }
+
+  function calculateAge(dobStr) {
+    if (!dobStr) return "-";
+    let day, month, year;
+
+    if (dobStr.includes("/")) {
+      const parts = dobStr.split("/");
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      year = parseInt(parts[2], 10);
+    } else if (dobStr.includes("-")) {
+      const parts = dobStr.split("-");
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      return "-";
+    }
+
+    const birthDate = new Date(year, month, day);
+    if (isNaN(birthDate.getTime())) return "-";
+
+    const today = new Date();
+    if (today < birthDate) return "0a 0m 0d";
+
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+
+    if (days < 0) {
+      months--;
+      const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      days += prevMonthLastDay;
+    }
+
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    return `${years}a ${months}m ${days}d`;
+  }
+
+  function updateMemberAgePreview() {
+    const val = document.getElementById("memberDob").value;
+    const calc = calculateAge(val);
+    document.getElementById("memberAgePreview").innerText = calc !== "-" ? `Idade calculada: ${calc}` : "";
+  }
+
+  function renderApp() {
+    const filter = document.getElementById("filterStatus").value;
+    const tabsList = document.getElementById("tabsList");
+    const streetToolbar = document.getElementById("streetToolbar");
+    const domicilesList = document.getElementById("domicilesList");
+
+    tabsList.innerHTML = "";
+    streetToolbar.innerHTML = "";
+    domicilesList.innerHTML = "";
+
+    // 1. Renderizar Abas
+    streets.forEach(street => {
+      if (filter === "ativos" && !street.active) return;
+
+      const tab = document.createElement("div");
+      tab.className = `tab-item ${street.id === currentStreetId ? "active" : ""} ${!street.active ? "inactive" : ""}`;
+      const title = street.section ? `${street.name} (${street.section})` : street.name;
+      tab.innerHTML = `<span>📁 ${escapeHtml(title)} ${!street.active ? "[Inativo]" : ""}</span>`;
+      tab.onclick = () => {
+        currentStreetId = street.id;
+        renderApp();
+      };
+      tabsList.appendChild(tab);
+    });
+
+    // Botão Nova Rua
+    const addTabBtn = document.createElement("button");
+    addTabBtn.className = "btn btn-secondary btn-sm no-print";
+    addTabBtn.style.alignSelf = "center";
+    addTabBtn.style.marginLeft = "8px";
+    addTabBtn.innerHTML = "➕ Nova Rua / Trecho";
+    addTabBtn.onclick = () => openStreetModal();
+    tabsList.appendChild(addTabBtn);
+
+    const currentStreet = streets.find(s => s.id === currentStreetId);
+    if (!currentStreet) {
+      domicilesList.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--muted);">Nenhuma rua selecionada ou ativa.</div>`;
+      return;
+    }
+
+    // 2. Toolbar da Rua Ativa
+    const fullStreetTitle = currentStreet.section ? `${currentStreet.name} - Trecho: ${currentStreet.section}` : currentStreet.name;
+    streetToolbar.innerHTML = `
+      <div>
+        <strong style="font-size: 1rem; color: var(--primary);">📍 ${escapeHtml(fullStreetTitle)}</strong>
+        <span style="font-size: 0.8rem; margin-left: 8px; color: ${currentStreet.active ? "var(--success)" : "var(--warning)"};">
+          ● ${currentStreet.active ? "Ativa" : "Inativa"}
+        </span>
+      </div>
+      <div class="no-print" style="display: flex; gap: 6px;">
+        <button class="btn btn-primary btn-sm" onclick="openDomicileModal()">🏠 Adicionar Domicílio</button>
+        <button class="btn btn-secondary btn-sm" onclick="openStreetModal('${currentStreet.id}')">✏️ Editar Rua</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleStreetActive('${currentStreet.id}')">
+          ${currentStreet.active ? "Inativar Rua" : "Reativar Rua"}
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStreet('${currentStreet.id}')">Excluir Rua</button>
+      </div>
+    `;
+
+    // 3. Renderizar Domicílios
+    let renderedDomiciles = 0;
+    currentStreet.domiciles.forEach(dom => {
+      if (filter === "ativos" && !dom.active) return;
+      renderedDomiciles++;
+
+      const card = document.createElement("div");
+      card.className = "domicile-card";
+
+      // Cabeçalho Domicílio
+      const header = document.createElement("div");
+      header.className = "domicile-header";
+      header.innerHTML = `
+        <div class="domicile-meta">
+          <span class="dom-badge">🏠 DOMICÍLIO Nº: ${escapeHtml(dom.number || "S/N")}</span>
+          <span class="dom-subbadge">CÓD. e-SUS: ${escapeHtml(dom.code || "-")}</span>
+          ${!dom.active ? '<span style="color:var(--danger); font-size:0.75rem; font-weight:bold;">[INATIVO]</span>' : ""}
+        </div>
+        <div class="no-print" style="display: flex; gap: 4px;">
+          <button class="btn btn-primary btn-sm" onclick="openMemberModal('${dom.id}')">➕ Morador</button>
+          <button class="btn btn-secondary btn-sm" onclick="openDomicileModal('${dom.id}')">✏️ Editar</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleDomicileActive('${dom.id}')">${dom.active ? "Inativar" : "Reativar"}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDomicile('${dom.id}')">Excluir</button>
+        </div>
+      `;
+      card.appendChild(header);
+
+      // Tabela de Moradores
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th style="width: 130px;">Data de Nasc.</th>
+            <th style="width: 140px;">Idade</th>
+            <th style="width: 110px;">Gestor</th>
+            <th>Nome Completo</th>
+            <th style="width: 110px; text-align: right;" class="no-print">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_${dom.id}"></tbody>
+      `;
+      card.appendChild(table);
+
+      const tbody = table.querySelector(`#tbody_${dom.id}`);
+      let renderedMembers = 0;
+
+      dom.members.forEach(m => {
+        if (filter === "ativos" && !m.active) return;
+        renderedMembers++;
+
+        const trMain = document.createElement("tr");
+        trMain.className = `row-member ${!m.active ? "is-inactive" : ""}`;
+        trMain.innerHTML = `
+          <td><strong>${escapeHtml(m.dob || "-")}</strong></td>
+          <td>${calculateAge(m.dob)}</td>
+          <td>${escapeHtml(m.manager || "-")}</td>
+          <td><strong>${escapeHtml(m.name || "-")}</strong> ${!m.active ? '<span style="color:var(--danger); font-size:0.75rem;">(Inativo)</span>' : ""}</td>
+          <td style="text-align: right;" class="no-print">
+            <button class="btn btn-secondary btn-sm" title="Editar" onclick="openMemberModal('${dom.id}', '${m.id}')">✏️</button>
+            <button class="btn btn-secondary btn-sm" title="${m.active ? "Inativar" : "Reativar"}" onclick="toggleMemberActive('${dom.id}', '${m.id}')">${m.active ? "🚫" : "✅"}</button>
+            <button class="btn btn-danger btn-sm" title="Excluir" onclick="deleteMember('${dom.id}', '${m.id}')">🗑️</button>
+          </td>
+        `;
+
+        // Sublinha 1: Condições
+        const trHealth = document.createElement("tr");
+        trHealth.className = "row-health";
+        const tagsHtml = (m.conditions || []).map((tag, idx) => `
+          <span class="tag">${escapeHtml(tag)} <span class="tag-remove no-print" onclick="removeHealthCondition('${dom.id}', '${m.id}', ${idx})">✕</span></span>
+        `).join("");
+
+        trHealth.innerHTML = `
+          <td colspan="5">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.75rem; font-weight:700; color:#475569;">🩺 CONDIÇÕES DE SAÚDE:</span>
+              <div class="tag-container">
+                ${tagsHtml || '<span style="font-size:0.75rem; color:var(--muted);">Nenhuma cadastrada</span>'}
+                <button class="btn btn-secondary btn-sm no-print" style="padding:2px 6px; font-size:0.7rem;" onclick="addHealthConditionPrompt('${dom.id}', '${m.id}')">➕ Add</button>
+              </div>
+            </div>
+          </td>
+        `;
+
+        // Sublinha 2: Observações
+        const trNotes = document.createElement("tr");
+        trNotes.className = "row-notes";
+        trNotes.innerHTML = `
+          <td colspan="5">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div style="font-size:0.8rem; color:#334155;">
+                <strong style="font-size:0.75rem; color:#475569;">📝 OBSERVAÇÕES:</strong> ${escapeHtml(m.notes || "Sem observações.")}
+              </div>
+              <button class="btn btn-secondary btn-sm no-print" style="padding:2px 6px; font-size:0.7rem;" onclick="editNotesPrompt('${dom.id}', '${m.id}')">✏️ Alterar</button>
+            </div>
+          </td>
+        `;
+
+        tbody.appendChild(trMain);
+        tbody.appendChild(trHealth);
+        tbody.appendChild(trNotes);
+      });
+
+      if (renderedMembers === 0) {
+        const emptyTr = document.createElement("tr");
+        emptyTr.innerHTML = `<td colspan="5" style="text-align:center; padding:16px; color:var(--muted);">Nenhum morador cadastrado neste domicílio.</td>`;
+        tbody.appendChild(emptyTr);
+      }
+
+      // Bloco de Assinatura Única Familiar
+      const sigBlock = document.createElement("div");
+      sigBlock.className = "family-signature";
+      sigBlock.innerHTML = `
+        <div class="sig-line">
+          Assinatura do Responsável Familiar (Domicílio Nº ${escapeHtml(dom.number)})
+        </div>
+        <div class="sig-date">
+          Data: ____/____/202___
+        </div>
+      `;
+      card.appendChild(sigBlock);
+
+      domicilesList.appendChild(card);
+    });
+
+    if (renderedDomiciles === 0) {
+      domicilesList.innerHTML = `<div style="padding:32px; background:white; border-radius:8px; border:1px dashed var(--border-color); text-align:center; color:var(--muted);">
+        Nenhum domicílio cadastrado nesta rua. Clique em <strong>"🏠 Adicionar Domicílio"</strong> ou use a barra de <strong>Colagem Rápida</strong> acima.
+      </div>`;
+    }
+  }
+
+  // MODAIS
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+  }
+
+  function openStreetModal(streetId = null) {
+    const modal = document.getElementById("modalStreet");
+    if (streetId) {
+      const s = streets.find(item => item.id === streetId);
+      document.getElementById("modalStreetTitle").innerText = "Editar Rua / Trecho";
+      document.getElementById("streetId").value = s.id;
+      document.getElementById("streetName").value = s.name;
+      document.getElementById("streetSection").value = s.section || "";
+    } else {
+      document.getElementById("modalStreetTitle").innerText = "Nova Rua / Trecho";
+      document.getElementById("streetId").value = "";
+      document.getElementById("streetName").value = "";
+      document.getElementById("streetSection").value = "";
+    }
+    modal.classList.add("open");
+    document.getElementById("streetName").focus();
+  }
+
+  function saveStreet() {
+    const id = document.getElementById("streetId").value;
+    const name = document.getElementById("streetName").value.trim();
+    const section = document.getElementById("streetSection").value.trim();
+
+    if (!name) {
+      alert("Informe o nome da rua.");
+      return;
+    }
+
+    if (id) {
+      const s = streets.find(item => item.id === id);
+      if (s) {
+        s.name = name;
+        s.section = section;
+      }
+    } else {
+      const newStreet = {
+        id: "street_" + Date.now(),
+        name,
+        section,
+        active: true,
+        domiciles: []
+      };
+      streets.push(newStreet);
+      currentStreetId = newStreet.id;
+    }
+
+    saveState();
+    closeModal("modalStreet");
+    renderApp();
+  }
+
+  function toggleStreetActive(id) {
+    const s = streets.find(item => item.id === id);
+    if (s) {
+      s.active = !s.active;
+      saveState();
+      renderApp();
+    }
+  }
+
+  function deleteStreet(id) {
+    if (confirm("Deseja realmente excluir esta rua e todos os seus domicílios?")) {
+      streets = streets.filter(s => s.id !== id);
+      currentStreetId = streets.length ? streets[0].id : null;
+      saveState();
+      renderApp();
+    }
+  }
+
+  function openDomicileModal(domId = null) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+
+    const modal = document.getElementById("modalDomicile");
+    if (domId) {
+      const d = s.domiciles.find(item => item.id === domId);
+      document.getElementById("modalDomicileTitle").innerText = "Editar Domicílio";
+      document.getElementById("domicileId").value = d.id;
+      document.getElementById("domicileNumber").value = d.number;
+      document.getElementById("domicileCode").value = d.code;
+    } else {
+      document.getElementById("modalDomicileTitle").innerText = "Cadastrar Domicílio";
+      document.getElementById("domicileId").value = "";
+      document.getElementById("domicileNumber").value = "";
+      document.getElementById("domicileCode").value = "";
+    }
+    modal.classList.add("open");
+    document.getElementById("domicileNumber").focus();
+  }
+
+  function saveDomicile() {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+
+    const id = document.getElementById("domicileId").value;
+    const number = document.getElementById("domicileNumber").value.trim();
+    const code = document.getElementById("domicileCode").value.trim();
+
+    if (!number) {
+      alert("Informe o número do domicílio.");
+      return;
+    }
+
+    if (id) {
+      const d = s.domiciles.find(item => item.id === id);
+      if (d) {
+        d.number = number;
+        d.code = code;
+      }
+    } else {
+      s.domiciles.push({
+        id: "dom_" + Date.now(),
+        number,
+        code,
+        active: true,
+        members: []
+      });
+    }
+
+    saveState();
+    closeModal("modalDomicile");
+    renderApp();
+  }
+
+  function toggleDomicileActive(domId) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    const d = s.domiciles.find(item => item.id === domId);
+    if (d) {
+      d.active = !d.active;
+      saveState();
+      renderApp();
+    }
+  }
+
+  function deleteDomicile(domId) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    if (confirm("Excluir este domicílio e seus moradores?")) {
+      s.domiciles = s.domiciles.filter(d => d.id !== domId);
+      saveState();
+      renderApp();
+    }
+  }
+
+  function openMemberModal(domId, memberId = null) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    const d = s.domiciles.find(item => item.id === domId);
+    if (!d) return;
+
+    document.getElementById("memberDomId").value = domId;
+    document.getElementById("memberId").value = memberId || "";
+
+    if (memberId) {
+      const m = d.members.find(item => item.id === memberId);
+      document.getElementById("modalMemberTitle").innerText = "Editar Morador";
+      document.getElementById("memberName").value = m.name;
+      document.getElementById("memberDob").value = m.dob;
+      document.getElementById("memberManager").value = m.manager;
+    } else {
+      document.getElementById("modalMemberTitle").innerText = "Adicionar Morador";
+      document.getElementById("memberName").value = "";
+      document.getElementById("memberDob").value = "";
+      document.getElementById("memberManager").value = "";
+    }
+
+    updateMemberAgePreview();
+    document.getElementById("modalMember").classList.add("open");
+    document.getElementById("memberName").focus();
+  }
+
+  function saveMember() {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    const domId = document.getElementById("memberDomId").value;
+    const d = s.domiciles.find(item => item.id === domId);
+    if (!d) return;
+
+    const mId = document.getElementById("memberId").value;
+    const name = document.getElementById("memberName").value.trim();
+    const dob = document.getElementById("memberDob").value.trim();
+    const manager = document.getElementById("memberManager").value.trim();
+
+    if (!name) {
+      alert("Informe o nome do morador.");
+      return;
+    }
+
+    if (mId) {
+      const m = d.members.find(item => item.id === mId);
+      if (m) {
+        m.name = name;
+        m.dob = dob;
+        m.manager = manager;
+      }
+    } else {
+      d.members.push({
+        id: "mem_" + Date.now(),
+        name,
+        dob,
+        manager,
+        conditions: [],
+        notes: "",
+        active: true
+      });
+    }
+
+    saveState();
+    closeModal("modalMember");
+    renderApp();
+  }
+
+  function toggleMemberActive(domId, memId) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    const d = s.domiciles.find(item => item.id === domId);
+    if (!d) return;
+    const m = d.members.find(item => item.id === memId);
+    if (m) {
+      m.active = !m.active;
+      saveState();
+      renderApp();
+    }
+  }
+
+  function deleteMember(domId, memId) {
+    const s = streets.find(item => item.id === currentStreetId);
+    if (!s) return;
+    const d = s.domiciles.find(item => item.id === domId);
+    if (!d) return;
+    if (confirm("Excluir este morador?")) {
+      d.members = d.members.filter(m => m.id !== memId);
+      saveState();
+      renderApp();
+    }
+  }
+
+  function addHealthConditionPrompt(domId, memId) {
+    const cond = prompt("Informe a condição de saúde (Ex: Hipertensão, Diabetes, Gestante, Acamado):");
+    if (cond && cond.trim()) {
+      const s = streets.find(item => item.id === currentStreetId);
+      const d = s.domiciles.find(item => item.id === domId);
+      const m = d.members.find(item => item.id === memId);
+      if (!m.conditions) m.conditions = [];
+      m.conditions.push(cond.trim());
+      saveState();
+      renderApp();
+    }
+  }
+
+  function removeHealthCondition(domId, memId, idx) {
+    const s = streets.find(item => item.id === currentStreetId);
+    const d = s.domiciles.find(item => item.id === domId);
+    const m = d.members.find(item => item.id === memId);
+    if (m && m.conditions) {
+      m.conditions.splice(idx, 1);
+      saveState();
+      renderApp();
+    }
+  }
+
+  function editNotesPrompt(domId, memId) {
+    const s = streets.find(item => item.id === currentStreetId);
+    const d = s.domiciles.find(item => item.id === domId);
+    const m = d.members.find(item => item.id === memId);
+    const updated = prompt("Observações do paciente:", m.notes || "");
+    if (updated !== null) {
+      m.notes = updated.trim();
+      saveState();
+      renderApp();
+    }
+  }
+
+  // PROCESSADOR DE COLAGEM RÁPIDA
+  function processQuickPaste() {
+    const rawInput = document.getElementById("pasteInput").value.trim();
+    if (!rawInput) {
+      alert("Cole uma linha no campo antes de clicar no botão.");
+      return;
+    }
+
+    let dob = "", name = "", manager = "", domNum = "", domCode = "";
+
+    // Padrão Compactado: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768
+    const regexCompact = /^(\d{2}\/\d{2}\/\d{4})(?:\d+a\s*\d+m\s*\d+d)?(\d{6,8})(.*?)(\d{1,5})\s+(\d{4,8})$/i;
+    const match = rawInput.match(regexCompact);
+
+    if (match) {
+      dob = match[1];
+      manager = match[2];
+      name = match[3].trim();
+      domNum = match[4].trim();
+      domCode = match[5].trim();
+    } else {
+      // Padrão Tabulado (Excel ou campos separados por espaço)
+      const tabs = rawInput.split(/\t+/);
+      if (tabs.length >= 4) {
+        dob = tabs[0].trim();
+        manager = tabs[2].trim();
+        name = tabs[3].trim();
+        domNum = tabs[4] ? tabs[4].trim() : "S/N";
+        domCode = tabs[5] ? tabs[5].trim() : "";
+      } else {
+        alert("Não foi possível identificar as colunas automaticamente. Verifique o formato inserido.");
+        return;
+      }
+    }
+
+    if (!currentStreetId && streets.length > 0) {
+      currentStreetId = streets[0].id;
+    }
+
+    let s = streets.find(item => item.id === currentStreetId);
+    if (!s) {
+      alert("Cadastre uma rua antes de inserir os dados.");
+      return;
+    }
+
+    // Procura domicílio com mesmo número
+    let targetDom = s.domiciles.find(d => d.number === domNum);
+    if (!targetDom) {
+      targetDom = {
+        id: "dom_" + Date.now(),
+        number: domNum || "S/N",
+        code: domCode || "",
+        active: true,
+        members: []
+      };
+      s.domiciles.push(targetDom);
+    } else if (domCode && !targetDom.code) {
+      targetDom.code = domCode;
+    }
+
+    targetDom.members.push({
+      id: "mem_" + Date.now(),
+      name: name || "NOME NÃO INFORMADO",
+      dob: dob || "",
+      manager: manager || "",
+      conditions: [],
+      notes: "",
+      active: true
+    });
+
+    saveState();
+    document.getElementById("pasteInput").value = "";
+    renderApp();
+    alert(`Morador(a) ${name} inserido(a) no Domicílio Nº ${domNum}!`);
+  }
+
+  function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(streets, null, 2));
+    const dlAnchor = document.createElement("a");
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `territorio_saude_${new Date().toISOString().slice(0,10)}.json`);
+    dlAnchor.click();
+  }
+
+  function resetToSample() {
+    if (confirm("Deseja restaurar os dados padrão? Isso substituirá as alterações não salvas em backup.")) {
+      streets = JSON.parse(JSON.stringify(INITIAL_DATA));
+      currentStreetId = streets[0].id;
+      saveState();
+      renderApp();
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Inicialização
+  window.onload = function() {
+    loadState();
+    renderApp();
+  };
+</script>
+</body>
+</html>
