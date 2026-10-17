@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestão Territorial e Fichas Domiciliares</title>
+  <!-- Scripts do Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
     :root {
       --primary: #1e3a8a;
-      --primary-light: #eff6ff;
       --border-color: #cbd5e1;
       --text: #0f172a;
       --muted: #64748b;
@@ -15,467 +17,116 @@
       --danger: #b91c1c;
       --warning: #b45309;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: #f8fafc;
-      color: var(--text);
-      padding: 16px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    header {
-      background: white;
-      padding: 16px 20px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    h1 {
-      font-size: 1.25rem;
-      color: var(--primary);
-    }
-
-    .btn {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: var(--text); padding: 16px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { background: white; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 1.25rem; color: var(--primary); }
+    .sync-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 999px; font-weight: 600; background: #dcfce7; color: #166534; }
+    .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid transparent; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: #172554; }
     .btn-secondary { background: white; border-color: var(--border-color); color: var(--text); }
-    .btn-secondary:hover { background: #f1f5f9; }
     .btn-danger { background: #fee2e2; color: var(--danger); border-color: #fca5a5; }
-    .btn-danger:hover { background: #fecaca; }
     .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
-
-    /* Importador Rápido */
-    .paste-card {
-      background: white;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-    }
-    .paste-card h3 {
-      font-size: 0.875rem;
-      margin-bottom: 8px;
-      color: var(--primary);
-    }
-    .paste-form {
-      display: flex;
-      gap: 8px;
-    }
-    .paste-form input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 0.85rem;
-    }
-
-    /* Abas de Ruas */
-    .tabs-wrapper {
-      display: flex;
-      gap: 4px;
-      overflow-x: auto;
-      border-bottom: 2px solid #e2e8f0;
-      margin-bottom: 16px;
-      padding-bottom: 4px;
-    }
-
-    .tab-item {
-      padding: 8px 16px;
-      background: #e2e8f0;
-      border: 1px solid var(--border-color);
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      cursor: pointer;
-      white-space: nowrap;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tab-item.active {
-      background: white;
-      color: var(--primary);
-      border-top: 3px solid var(--primary);
-      margin-bottom: -6px;
-      padding-bottom: 10px;
-    }
-
-    .tab-item.inactive {
-      opacity: 0.6;
-      border-left: 3px solid var(--warning);
-    }
-
-    /* Controles da Rua */
-    .street-toolbar {
-      background: white;
-      padding: 12px 16px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    /* Cartão do Domicílio */
-    .domicile-card {
-      background: white;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 24px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .domicile-header {
-      background: #f1f5f9;
-      border-bottom: 1px solid var(--border-color);
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .domicile-meta {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .dom-badge {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--primary);
-    }
-
-    .dom-subbadge {
-      background: #e0f2fe;
-      color: #0369a1;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    /* Tabela de Moradores */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-
-    th {
-      background: #f8fafc;
-      color: var(--muted);
-      text-align: left;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border-color);
-      font-weight: 600;
-    }
-
-    td {
-      padding: 8px 12px;
-      border-bottom: 1px solid #e2e8f0;
-      vertical-align: middle;
-    }
-
-    .row-member {
-      background: white;
-    }
-
-    .row-member.is-inactive {
-      opacity: 0.5;
-      background: #fef2f2;
-    }
-
-    .row-health {
-      background: #fafafa;
-    }
-
-    .row-notes {
-      background: #fafafa;
-      border-bottom: 2px solid #cbd5e1;
-    }
-
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .tag {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .tag-remove {
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    /* Assinatura Familiar */
-    .family-signature {
-      background: #ffffff;
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      border-top: 1px dashed var(--border-color);
-      gap: 20px;
-    }
-
-    .sig-line {
-      flex: 1;
-      border-bottom: 1px solid #475569;
-      padding-bottom: 4px;
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    .sig-date {
-      width: 180px;
-      border-bottom: 1px solid #475569;
-      padding-bottom: 4px;
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: right;
-    }
-
-    /* Modais */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal-box {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 460px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-
-    .modal-box h2 {
-      font-size: 1.1rem;
-      margin-bottom: 12px;
-      color: var(--primary);
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: #334155;
-    }
-
-    .form-group input, .form-group textarea {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 0.875rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    @media print {
-      body { background: white; padding: 0; }
-      .paste-card, .tabs-wrapper, .street-toolbar, .no-print, button { display: none !important; }
-      .domicile-card { page-break-inside: avoid; border: 1px solid #000; margin-bottom: 16px; }
-      th, td { border-color: #000; }
-    }
+    .paste-card { background: white; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+    .paste-form { display: flex; gap: 8px; margin-top: 6px; }
+    .paste-form input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; }
+    .tabs-wrapper { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; padding-bottom: 4px; }
+    .tab-item { padding: 8px 16px; background: #e2e8f0; border: 1px solid var(--border-color); border-bottom: none; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+    .tab-item.active { background: white; color: var(--primary); border-top: 3px solid var(--primary); font-weight: 700; }
+    .street-toolbar { background: white; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .domicile-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+    .domicile-header { background: #f1f5f9; border-bottom: 1px solid var(--border-color); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .dom-badge { font-weight: 700; color: var(--primary); }
+    .dom-subbadge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: #f8fafc; color: var(--muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+    td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    .row-health, .row-notes { background: #fafafa; }
+    .row-notes { border-bottom: 2px solid #cbd5e1; }
+    .tag { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; display: inline-block; }
+    .family-signature { padding: 16px; display: flex; justify-content: space-between; border-top: 1px dashed var(--border-color); gap: 20px; }
+    .sig-line { flex: 1; border-bottom: 1px solid #475569; padding-bottom: 4px; font-size: 0.75rem; color: var(--muted); }
+    .sig-date { width: 180px; border-bottom: 1px solid #475569; padding-bottom: 4px; font-size: 0.75rem; color: var(--muted); text-align: right; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 440px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+    .form-group input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; }
+    @media print { .no-print, button { display: none !important; } .domicile-card { page-break-inside: avoid; border: 1px solid #000; } }
   </style>
 </head>
-  <!-- Scripts de Ligação ao Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
-<script>
-  // Inicialização da base de dados do seu projeto
-  const firebaseConfig = {
-    databaseURL: "https://visitas-d3689-default-rtdb.firebaseio.com/"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const rtdb = firebase.database();
-
-  // Função para sincronizar dados com o Firebase
-  function sincronizarComFirebase(dados) {
-    rtdb.ref("territorio_saude").set(dados)
-      .then(() => console.log("Dados sincronizados no Firebase com sucesso!"))
-      .catch((erro) => console.error("Erro na sincronização:", erro));
-  }
-
-  // Ouvinte em tempo real: carrega do Firebase se existir
-  rtdb.ref("territorio_saude").on("value", (snapshot) => {
-    const dadosNuvem = snapshot.val();
-    if (dadosNuvem) {
-      streets = dadosNuvem;
-      if (typeof renderApp === "function") renderApp();
-    }
-  });
-</script>
 <body>
 
 <div class="container">
   <header>
     <div>
       <h1>Cadastro Territorial & Fichas Domiciliares</h1>
-      <p style="font-size: 0.8rem; color: var(--muted);">Gerenciamento de Ruas, Residências e Moradores</p>
+      <span id="syncStatus" class="sync-badge">🔄 Conectando ao Firebase...</span>
     </div>
-    <div style="display: flex; gap: 8px;" class="no-print">
-      <select id="filterStatus" onchange="renderApp()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem;">
-        <option value="ativos">Exibir: Apenas Ativos</option>
-        <option value="todos">Exibir: Todos (incluindo Inativos)</option>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="no-print">
+      <select id="filterCondition" onchange="renderApp()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+        <option value="">🩺 Todas as Condições</option>
+      </select>
+      <select id="filterStatus" onchange="renderApp()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+        <option value="ativos">🟢 Apenas Ativos</option>
+        <option value="todos">👁️ Todos (Com Inativos)</option>
       </select>
       <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportData()">💾 Baixar Backup</button>
-      <button class="btn btn-danger btn-sm" onclick="resetToSample()">🔄 Restaurar Padrão</button>
     </div>
   </header>
 
-  <!-- Importador Rápido -->
   <div class="paste-card no-print">
-    <h3>📋 Colagem Rápida Inteligente</h3>
+    <strong style="font-size: 0.85rem; color: var(--primary);">📋 Colagem Rápida Inteligente</strong>
     <div class="paste-form">
-      <input type="text" id="pasteInput" placeholder="Ex: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768">
-      <button class="btn btn-primary btn-sm" onclick="processQuickPaste()">Processar e Inserir</button>
+      <input type="text" id="pasteInput" placeholder="Cole aqui: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768">
+      <button class="btn btn-primary btn-sm" onclick="processQuickPaste()">Inserir</button>
     </div>
-    <div style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Aceita formato colado compacto ou linhas copiadas do e-SUS/Excel.</div>
   </div>
 
-  <!-- Abas de Ruas -->
   <div class="tabs-wrapper" id="tabsList"></div>
-
-  <!-- Barra da Rua Ativa -->
   <div class="street-toolbar" id="streetToolbar"></div>
-
-  <!-- Lista de Domicílios -->
   <div id="domicilesList"></div>
 </div>
 
-<!-- MODAL: RUA -->
+<!-- MODAL RUA -->
 <div class="modal-overlay" id="modalStreet">
   <div class="modal-box">
-    <h2 id="modalStreetTitle">Cadastrar Rua / Trecho</h2>
+    <h3 id="modalStreetTitle" style="margin-bottom:12px;">Rua / Trecho</h3>
     <input type="hidden" id="streetId">
-    <div class="form-group">
-      <label>Nome do Logradouro / Rua</label>
-      <input type="text" id="streetName" placeholder="Ex: Rua Rafael Garcia">
-    </div>
-    <div class="form-group">
-      <label>Identificação do Trecho (Opcional)</label>
-      <input type="text" id="streetSection" placeholder="Ex: Ímpar 101 a 247">
-    </div>
-    <div class="modal-actions">
+    <div class="form-group"><label>Nome da Rua</label><input type="text" id="streetName"></div>
+    <div class="form-group"><label>Identificação / Trecho</label><input type="text" id="streetSection" placeholder="Ex: Ímpar 101 a 247"></div>
+    <div style="text-align:right; gap:8px;">
       <button class="btn btn-secondary" onclick="closeModal('modalStreet')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveStreet()">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: DOMICÍLIO -->
+<!-- MODAL DOMICÍLIO -->
 <div class="modal-overlay" id="modalDomicile">
   <div class="modal-box">
-    <h2 id="modalDomicileTitle">Cadastrar Domicílio</h2>
+    <h3 style="margin-bottom:12px;">Domicílio</h3>
     <input type="hidden" id="domicileId">
-    <div class="form-group">
-      <label>Nº do Domicílio (Fachada/Porta)</label>
-      <input type="text" id="domicileNumber" placeholder="Ex: 463">
-    </div>
-    <div class="form-group">
-      <label>Código do Domicílio (e-SUS)</label>
-      <input type="text" id="domicileCode" placeholder="Ex: 564768">
-    </div>
-    <div class="modal-actions">
+    <div class="form-group"><label>Nº do Domicílio</label><input type="text" id="domicileNumber"></div>
+    <div class="form-group"><label>Código e-SUS</label><input type="text" id="domicileCode"></div>
+    <div style="text-align:right;">
       <button class="btn btn-secondary" onclick="closeModal('modalDomicile')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveDomicile()">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: MORADOR -->
+<!-- MODAL MORADOR -->
 <div class="modal-overlay" id="modalMember">
   <div class="modal-box">
-    <h2 id="modalMemberTitle">Cadastrar Morador</h2>
-    <input type="hidden" id="memberDomId">
-    <input type="hidden" id="memberId">
-    <div class="form-group">
-      <label>Nome Completo</label>
-      <input type="text" id="memberName" placeholder="Ex: VIVIANE DE MORAIS MATHIAS">
-    </div>
-    <div class="form-group">
-      <label>Data de Nascimento</label>
-      <input type="text" id="memberDob" placeholder="DD/MM/AAAA ou AAAA-MM-DD" oninput="updateMemberAgePreview()">
-      <small id="memberAgePreview" style="color: var(--primary); font-weight: bold;"></small>
-    </div>
-    <div class="form-group">
-      <label>Código do Gestor</label>
-      <input type="text" id="memberManager" placeholder="Ex: 1021443">
-    </div>
-    <div class="modal-actions">
+    <h3 style="margin-bottom:12px;">Morador</h3>
+    <input type="hidden" id="memberDomId"><input type="hidden" id="memberId">
+    <div class="form-group"><label>Nome Completo</label><input type="text" id="memberName"></div>
+    <div class="form-group"><label>Data de Nascimento (DD/MM/AAAA)</label><input type="text" id="memberDob"></div>
+    <div class="form-group"><label>Gestor</label><input type="text" id="memberManager"></div>
+    <div style="text-align:right;">
       <button class="btn btn-secondary" onclick="closeModal('modalMember')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveMember()">Salvar</button>
     </div>
@@ -483,593 +134,286 @@
 </div>
 
 <script>
-  // ESTRUTURA INICIAL
+  // CONEXÃO DIRETA COM O SEU FIREBASE (visitas-d3689)
+  const firebaseConfig = {
+    databaseURL: "https://visitas-d3689-default-rtdb.firebaseio.com/"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const dbRef = firebase.database().ref("territorio_saude");
+
   const INITIAL_DATA = [
     {
-      id: "street_1",
-      name: "Rua Rafael Garcia",
-      section: "Ímpar 101 a 247",
-      active: true,
-      domiciles: [
-        {
-          id: "dom_1",
-          number: "463",
-          code: "564768",
-          active: true,
-          members: [
-            {
-              id: "mem_1",
-              name: "VIVIANE DE MORAIS MATHIAS",
-              dob: "25/02/1983",
-              manager: "1021443",
-              conditions: ["Hipertensão Arterial", "Diabetes Mellitus"],
-              notes: "Faz acompanhamento na UBS e uso diário de medicação.",
-              active: true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "street_2",
-      name: "Rua Rafael Garcia",
-      section: "Par 212 a 248",
-      active: true,
-      domiciles: []
+      id: "street_1", name: "Rua Rafael Garcia", section: "Ímpar 101 a 247", active: true,
+      domiciles: [{
+        id: "dom_1", number: "463", code: "564768", active: true,
+        members: [{
+          id: "mem_1", name: "VIVIANE DE MORAIS MATHIAS", dob: "25/02/1983", manager: "1021443",
+          conditions: ["Hipertensão Arterial"], notes: "Acompanhamento regular.", active: true
+        }]
+      }]
     }
   ];
 
   let streets = [];
   let currentStreetId = null;
 
-  function loadState() {
-    const raw = localStorage.getItem("territorial_data_v2");
-    if (raw) {
-      try {
-        streets = JSON.parse(raw);
-      } catch (e) {
-        streets = INITIAL_DATA;
-      }
+  // Escuta alterações em tempo real do Firebase
+  dbRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    const badge = document.getElementById("syncStatus");
+    if (data && Array.isArray(data)) {
+      streets = data;
+      badge.innerText = "☁️ Sincronizado com Firebase";
+      badge.style.background = "#dcfce7";
     } else {
       streets = INITIAL_DATA;
+      saveState();
     }
-    if (!currentStreetId && streets.length > 0) {
-      currentStreetId = streets[0].id;
-    }
-  }
+    if (!currentStreetId && streets.length > 0) currentStreetId = streets[0].id;
+    renderApp();
+  }, (err) => {
+    document.getElementById("syncStatus").innerText = "⚠️ Erro Permissão Firebase (Verifique Regras)";
+    document.getElementById("syncStatus").style.background = "#fee2e2";
+  });
 
   function saveState() {
-    localStorage.setItem("territorial_data_v2", JSON.stringify(streets));
+    localStorage.setItem("territorial_backup", JSON.stringify(streets));
+    dbRef.set(streets);
   }
 
   function calculateAge(dobStr) {
-    if (!dobStr) return "-";
-    let day, month, year;
-
-    if (dobStr.includes("/")) {
-      const parts = dobStr.split("/");
-      day = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10) - 1;
-      year = parseInt(parts[2], 10);
-    } else if (dobStr.includes("-")) {
-      const parts = dobStr.split("-");
-      year = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10) - 1;
-      day = parseInt(parts[2], 10);
-    } else {
-      return "-";
-    }
-
-    const birthDate = new Date(year, month, day);
-    if (isNaN(birthDate.getTime())) return "-";
-
+    if (!dobStr || !dobStr.includes("/")) return "-";
+    const [d, m, y] = dobStr.split("/").map(Number);
+    const birth = new Date(y, m - 1, d);
+    if (isNaN(birth)) return "-";
     const today = new Date();
-    if (today < birthDate) return "0a 0m 0d";
-
-    let years = today.getFullYear() - birthDate.getFullYear();
-    let months = today.getMonth() - birthDate.getMonth();
-    let days = today.getDate() - birthDate.getDate();
-
-    if (days < 0) {
-      months--;
-      const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-      days += prevMonthLastDay;
-    }
-
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+    let days = today.getDate() - birth.getDate();
+    if (days < 0) { months--; days += new Date(today.getFullYear(), today.getMonth(), 0).getDate(); }
+    if (months < 0) { years--; months += 12; }
     return `${years}a ${months}m ${days}d`;
-  }
-
-  function updateMemberAgePreview() {
-    const val = document.getElementById("memberDob").value;
-    const calc = calculateAge(val);
-    document.getElementById("memberAgePreview").innerText = calc !== "-" ? `Idade calculada: ${calc}` : "";
   }
 
   function renderApp() {
     const filter = document.getElementById("filterStatus").value;
+    const condFilter = document.getElementById("filterCondition").value;
     const tabsList = document.getElementById("tabsList");
     const streetToolbar = document.getElementById("streetToolbar");
     const domicilesList = document.getElementById("domicilesList");
 
-    tabsList.innerHTML = "";
-    streetToolbar.innerHTML = "";
-    domicilesList.innerHTML = "";
+    tabsList.innerHTML = ""; streetToolbar.innerHTML = ""; domicilesList.innerHTML = "";
 
-    // 1. Renderizar Abas
-    streets.forEach(street => {
-      if (filter === "ativos" && !street.active) return;
-
+    streets.forEach(st => {
+      if (!st.domiciles) st.domiciles = [];
+      if (filter === "ativos" && !st.active) return;
       const tab = document.createElement("div");
-      tab.className = `tab-item ${street.id === currentStreetId ? "active" : ""} ${!street.active ? "inactive" : ""}`;
-      const title = street.section ? `${street.name} (${street.section})` : street.name;
-      tab.innerHTML = `<span>📁 ${escapeHtml(title)} ${!street.active ? "[Inativo]" : ""}</span>`;
-      tab.onclick = () => {
-        currentStreetId = street.id;
-        renderApp();
-      };
+      tab.className = `tab-item ${st.id === currentStreetId ? "active" : ""}`;
+      tab.innerText = st.section ? `📁 ${st.name} (${st.section})` : `📁 ${st.name}`;
+      tab.onclick = () => { currentStreetId = st.id; renderApp(); };
       tabsList.appendChild(tab);
     });
 
-    // Botão Nova Rua
-    const addTabBtn = document.createElement("button");
-    addTabBtn.className = "btn btn-secondary btn-sm no-print";
-    addTabBtn.style.alignSelf = "center";
-    addTabBtn.style.marginLeft = "8px";
-    addTabBtn.innerHTML = "➕ Nova Rua / Trecho";
-    addTabBtn.onclick = () => openStreetModal();
-    tabsList.appendChild(addTabBtn);
+    const addBtn = document.createElement("button");
+    addBtn.className = "btn btn-secondary btn-sm no-print";
+    addBtn.innerText = "➕ Nova Rua";
+    addBtn.onclick = () => openStreetModal();
+    tabsList.appendChild(addBtn);
 
     const currentStreet = streets.find(s => s.id === currentStreetId);
-    if (!currentStreet) {
-      domicilesList.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--muted);">Nenhuma rua selecionada ou ativa.</div>`;
-      return;
-    }
+    if (!currentStreet) return;
 
-    // 2. Toolbar da Rua Ativa
-    const fullStreetTitle = currentStreet.section ? `${currentStreet.name} - Trecho: ${currentStreet.section}` : currentStreet.name;
+    // Atualiza lista de condições da rua para o filtro
+    const allConditions = new Set();
+    currentStreet.domiciles.forEach(d => (d.members || []).forEach(m => (m.conditions || []).forEach(c => allConditions.add(c))));
+    const selCond = document.getElementById("filterCondition");
+    selCond.innerHTML = '<option value="">🩺 Todas as Condições</option>';
+    allConditions.forEach(c => {
+      selCond.innerHTML += `<option value="${c}" ${c === condFilter ? "selected" : ""}>${c}</option>`;
+    });
+
     streetToolbar.innerHTML = `
-      <div>
-        <strong style="font-size: 1rem; color: var(--primary);">📍 ${escapeHtml(fullStreetTitle)}</strong>
-        <span style="font-size: 0.8rem; margin-left: 8px; color: ${currentStreet.active ? "var(--success)" : "var(--warning)"};">
-          ● ${currentStreet.active ? "Ativa" : "Inativa"}
-        </span>
-      </div>
-      <div class="no-print" style="display: flex; gap: 6px;">
-        <button class="btn btn-primary btn-sm" onclick="openDomicileModal()">🏠 Adicionar Domicílio</button>
+      <strong>📍 ${currentStreet.name} ${currentStreet.section ? `(${currentStreet.section})` : ""}</strong>
+      <div class="no-print" style="display:flex; gap:6px;">
+        <button class="btn btn-primary btn-sm" onclick="openDomicileModal()">🏠 Novo Domicílio</button>
         <button class="btn btn-secondary btn-sm" onclick="openStreetModal('${currentStreet.id}')">✏️ Editar Rua</button>
-        <button class="btn btn-secondary btn-sm" onclick="toggleStreetActive('${currentStreet.id}')">
-          ${currentStreet.active ? "Inativar Rua" : "Reativar Rua"}
-        </button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStreet('${currentStreet.id}')">Excluir Rua</button>
       </div>
     `;
 
-    // 3. Renderizar Domicílios
-    let renderedDomiciles = 0;
     currentStreet.domiciles.forEach(dom => {
+      if (!dom.members) dom.members = [];
       if (filter === "ativos" && !dom.active) return;
-      renderedDomiciles++;
+
+      const visibleMembers = dom.members.filter(m => {
+        if (filter === "ativos" && !m.active) return false;
+        if (condFilter && !(m.conditions || []).includes(condFilter)) return false;
+        return true;
+      });
+
+      if (condFilter && visibleMembers.length === 0) return;
 
       const card = document.createElement("div");
       card.className = "domicile-card";
-
-      // Cabeçalho Domicílio
-      const header = document.createElement("div");
-      header.className = "domicile-header";
-      header.innerHTML = `
-        <div class="domicile-meta">
-          <span class="dom-badge">🏠 DOMICÍLIO Nº: ${escapeHtml(dom.number || "S/N")}</span>
-          <span class="dom-subbadge">CÓD. e-SUS: ${escapeHtml(dom.code || "-")}</span>
-          ${!dom.active ? '<span style="color:var(--danger); font-size:0.75rem; font-weight:bold;">[INATIVO]</span>' : ""}
+      card.innerHTML = `
+        <div class="domicile-header">
+          <div>
+            <span class="dom-badge">🏠 DOMICÍLIO Nº: ${dom.number}</span>
+            <span class="dom-subbadge">CÓD. e-SUS: ${dom.code || "-"}</span>
+          </div>
+          <div class="no-print">
+            <button class="btn btn-primary btn-sm" onclick="openMemberModal('${dom.id}')">➕ Morador</button>
+            <button class="btn btn-secondary btn-sm" onclick="openDomicileModal('${dom.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteDomicile('${dom.id}')">🗑️</button>
+          </div>
         </div>
-        <div class="no-print" style="display: flex; gap: 4px;">
-          <button class="btn btn-primary btn-sm" onclick="openMemberModal('${dom.id}')">➕ Morador</button>
-          <button class="btn btn-secondary btn-sm" onclick="openDomicileModal('${dom.id}')">✏️ Editar</button>
-          <button class="btn btn-secondary btn-sm" onclick="toggleDomicileActive('${dom.id}')">${dom.active ? "Inativar" : "Reativar"}</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDomicile('${dom.id}')">Excluir</button>
-        </div>
-      `;
-      card.appendChild(header);
-
-      // Tabela de Moradores
-      const table = document.createElement("table");
-      table.innerHTML = `
-        <thead>
-          <tr>
-            <th style="width: 130px;">Data de Nasc.</th>
-            <th style="width: 140px;">Idade</th>
-            <th style="width: 110px;">Gestor</th>
-            <th>Nome Completo</th>
-            <th style="width: 110px; text-align: right;" class="no-print">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tbody_${dom.id}"></tbody>
-      `;
-      card.appendChild(table);
-
-      const tbody = table.querySelector(`#tbody_${dom.id}`);
-      let renderedMembers = 0;
-
-      dom.members.forEach(m => {
-        if (filter === "ativos" && !m.active) return;
-        renderedMembers++;
-
-        const trMain = document.createElement("tr");
-        trMain.className = `row-member ${!m.active ? "is-inactive" : ""}`;
-        trMain.innerHTML = `
-          <td><strong>${escapeHtml(m.dob || "-")}</strong></td>
-          <td>${calculateAge(m.dob)}</td>
-          <td>${escapeHtml(m.manager || "-")}</td>
-          <td><strong>${escapeHtml(m.name || "-")}</strong> ${!m.active ? '<span style="color:var(--danger); font-size:0.75rem;">(Inativo)</span>' : ""}</td>
-          <td style="text-align: right;" class="no-print">
-            <button class="btn btn-secondary btn-sm" title="Editar" onclick="openMemberModal('${dom.id}', '${m.id}')">✏️</button>
-            <button class="btn btn-secondary btn-sm" title="${m.active ? "Inativar" : "Reativar"}" onclick="toggleMemberActive('${dom.id}', '${m.id}')">${m.active ? "🚫" : "✅"}</button>
-            <button class="btn btn-danger btn-sm" title="Excluir" onclick="deleteMember('${dom.id}', '${m.id}')">🗑️</button>
-          </td>
-        `;
-
-        // Sublinha 1: Condições
-        const trHealth = document.createElement("tr");
-        trHealth.className = "row-health";
-        const tagsHtml = (m.conditions || []).map((tag, idx) => `
-          <span class="tag">${escapeHtml(tag)} <span class="tag-remove no-print" onclick="removeHealthCondition('${dom.id}', '${m.id}', ${idx})">✕</span></span>
-        `).join("");
-
-        trHealth.innerHTML = `
-          <td colspan="5">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:0.75rem; font-weight:700; color:#475569;">🩺 CONDIÇÕES DE SAÚDE:</span>
-              <div class="tag-container">
-                ${tagsHtml || '<span style="font-size:0.75rem; color:var(--muted);">Nenhuma cadastrada</span>'}
-                <button class="btn btn-secondary btn-sm no-print" style="padding:2px 6px; font-size:0.7rem;" onclick="addHealthConditionPrompt('${dom.id}', '${m.id}')">➕ Add</button>
-              </div>
-            </div>
-          </td>
-        `;
-
-        // Sublinha 2: Observações
-        const trNotes = document.createElement("tr");
-        trNotes.className = "row-notes";
-        trNotes.innerHTML = `
-          <td colspan="5">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-              <div style="font-size:0.8rem; color:#334155;">
-                <strong style="font-size:0.75rem; color:#475569;">📝 OBSERVAÇÕES:</strong> ${escapeHtml(m.notes || "Sem observações.")}
-              </div>
-              <button class="btn btn-secondary btn-sm no-print" style="padding:2px 6px; font-size:0.7rem;" onclick="editNotesPrompt('${dom.id}', '${m.id}')">✏️ Alterar</button>
-            </div>
-          </td>
-        `;
-
-        tbody.appendChild(trMain);
-        tbody.appendChild(trHealth);
-        tbody.appendChild(trNotes);
-      });
-
-      if (renderedMembers === 0) {
-        const emptyTr = document.createElement("tr");
-        emptyTr.innerHTML = `<td colspan="5" style="text-align:center; padding:16px; color:var(--muted);">Nenhum morador cadastrado neste domicílio.</td>`;
-        tbody.appendChild(emptyTr);
-      }
-
-      // Bloco de Assinatura Única Familiar
-      const sigBlock = document.createElement("div");
-      sigBlock.className = "family-signature";
-      sigBlock.innerHTML = `
-        <div class="sig-line">
-          Assinatura do Responsável Familiar (Domicílio Nº ${escapeHtml(dom.number)})
-        </div>
-        <div class="sig-date">
-          Data: ____/____/202___
+        <table>
+          <thead>
+            <tr><th style="width:120px;">Data Nasc.</th><th style="width:120px;">Idade</th><th style="width:100px;">Gestor</th><th>Nome Completo</th><th style="width:90px;text-align:right;" class="no-print">Ações</th></tr>
+          </thead>
+          <tbody id="tb_${dom.id}"></tbody>
+        </table>
+        <div class="family-signature">
+          <div class="sig-line">ASSINATURA DO RESPONSÁVEL FAMILIAR (Domicílio Nº ${dom.number})</div>
+          <div class="sig-date">Data: ____/____/202___</div>
         </div>
       `;
-      card.appendChild(sigBlock);
-
       domicilesList.appendChild(card);
+
+      const tbody = card.querySelector(`#tb_${dom.id}`);
+      visibleMembers.forEach(m => {
+        const tags = (m.conditions || []).map((c, idx) => `<span class="tag">${c} <b style="cursor:pointer;" onclick="removeCond('${dom.id}','${m.id}',${idx})">✕</b></span>`).join("");
+        tbody.innerHTML += `
+          <tr>
+            <td><b>${m.dob}</b></td>
+            <td>${calculateAge(m.dob)}</td>
+            <td>${m.manager}</td>
+            <td><b>${m.name}</b></td>
+            <td style="text-align:right;" class="no-print">
+              <button class="btn btn-secondary btn-sm" onclick="openMemberModal('${dom.id}','${m.id}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteMember('${dom.id}','${m.id}')">🗑️</button>
+            </td>
+          </tr>
+          <tr class="row-health"><td colspan="5">🩺 <b>Condições:</b> ${tags || "Nenhuma"} <button class="btn btn-secondary btn-sm no-print" onclick="addCond('${dom.id}','${m.id}')">➕</button></td></tr>
+          <tr class="row-notes"><td colspan="5">📝 <b>Obs:</b> ${m.notes || "-"} <button class="btn btn-secondary btn-sm no-print" onclick="editNote('${dom.id}','${m.id}')">✏️</button></td></tr>
+        `;
+      });
     });
-
-    if (renderedDomiciles === 0) {
-      domicilesList.innerHTML = `<div style="padding:32px; background:white; border-radius:8px; border:1px dashed var(--border-color); text-align:center; color:var(--muted);">
-        Nenhum domicílio cadastrado nesta rua. Clique em <strong>"🏠 Adicionar Domicílio"</strong> ou use a barra de <strong>Colagem Rápida</strong> acima.
-      </div>`;
-    }
   }
 
-  // MODAIS
-  function closeModal(id) {
-    document.getElementById(id).classList.remove("open");
+  function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+  function openStreetModal(id = "") {
+    const s = streets.find(x => x.id === id);
+    document.getElementById("streetId").value = id;
+    document.getElementById("streetName").value = s ? s.name : "";
+    document.getElementById("streetSection").value = s ? s.section : "";
+    document.getElementById("modalStreet").classList.add("open");
   }
-
-  function openStreetModal(streetId = null) {
-    const modal = document.getElementById("modalStreet");
-    if (streetId) {
-      const s = streets.find(item => item.id === streetId);
-      document.getElementById("modalStreetTitle").innerText = "Editar Rua / Trecho";
-      document.getElementById("streetId").value = s.id;
-      document.getElementById("streetName").value = s.name;
-      document.getElementById("streetSection").value = s.section || "";
-    } else {
-      document.getElementById("modalStreetTitle").innerText = "Nova Rua / Trecho";
-      document.getElementById("streetId").value = "";
-      document.getElementById("streetName").value = "";
-      document.getElementById("streetSection").value = "";
-    }
-    modal.classList.add("open");
-    document.getElementById("streetName").focus();
-  }
-
   function saveStreet() {
     const id = document.getElementById("streetId").value;
     const name = document.getElementById("streetName").value.trim();
     const section = document.getElementById("streetSection").value.trim();
-
-    if (!name) {
-      alert("Informe o nome da rua.");
-      return;
-    }
-
-    if (id) {
-      const s = streets.find(item => item.id === id);
-      if (s) {
-        s.name = name;
-        s.section = section;
-      }
-    } else {
-      const newStreet = {
-        id: "street_" + Date.now(),
-        name,
-        section,
-        active: true,
-        domiciles: []
-      };
-      streets.push(newStreet);
-      currentStreetId = newStreet.id;
-    }
-
-    saveState();
-    closeModal("modalStreet");
-    renderApp();
+    if (!name) return;
+    if (id) { const s = streets.find(x => x.id === id); s.name = name; s.section = section; }
+    else { const ns = { id: "st_" + Date.now(), name, section, active: true, domiciles: [] }; streets.push(ns); currentStreetId = ns.id; }
+    saveState(); closeModal("modalStreet"); renderApp();
   }
-
-  function toggleStreetActive(id) {
-    const s = streets.find(item => item.id === id);
-    if (s) {
-      s.active = !s.active;
-      saveState();
-      renderApp();
-    }
+  function openDomicileModal(id = "") {
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === id);
+    document.getElementById("domicileId").value = id;
+    document.getElementById("domicileNumber").value = d ? d.number : "";
+    document.getElementById("domicileCode").value = d ? d.code : "";
+    document.getElementById("modalDomicile").classList.add("open");
   }
-
-  function deleteStreet(id) {
-    if (confirm("Deseja realmente excluir esta rua e todos os seus domicílios?")) {
-      streets = streets.filter(s => s.id !== id);
-      currentStreetId = streets.length ? streets[0].id : null;
-      saveState();
-      renderApp();
-    }
-  }
-
-  function openDomicileModal(domId = null) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-
-    const modal = document.getElementById("modalDomicile");
-    if (domId) {
-      const d = s.domiciles.find(item => item.id === domId);
-      document.getElementById("modalDomicileTitle").innerText = "Editar Domicílio";
-      document.getElementById("domicileId").value = d.id;
-      document.getElementById("domicileNumber").value = d.number;
-      document.getElementById("domicileCode").value = d.code;
-    } else {
-      document.getElementById("modalDomicileTitle").innerText = "Cadastrar Domicílio";
-      document.getElementById("domicileId").value = "";
-      document.getElementById("domicileNumber").value = "";
-      document.getElementById("domicileCode").value = "";
-    }
-    modal.classList.add("open");
-    document.getElementById("domicileNumber").focus();
-  }
-
   function saveDomicile() {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-
+    const s = streets.find(x => x.id === currentStreetId);
     const id = document.getElementById("domicileId").value;
     const number = document.getElementById("domicileNumber").value.trim();
     const code = document.getElementById("domicileCode").value.trim();
-
-    if (!number) {
-      alert("Informe o número do domicílio.");
-      return;
-    }
-
-    if (id) {
-      const d = s.domiciles.find(item => item.id === id);
-      if (d) {
-        d.number = number;
-        d.code = code;
-      }
-    } else {
-      s.domiciles.push({
-        id: "dom_" + Date.now(),
-        number,
-        code,
-        active: true,
-        members: []
-      });
-    }
-
-    saveState();
-    closeModal("modalDomicile");
-    renderApp();
+    if (!number) return;
+    if (!s.domiciles) s.domiciles = [];
+    if (id) { const d = s.domiciles.find(x => x.id === id); d.number = number; d.code = code; }
+    else { s.domiciles.push({ id: "dom_" + Date.now(), number, code, active: true, members: [] }); }
+    saveState(); closeModal("modalDomicile"); renderApp();
   }
-
-  function toggleDomicileActive(domId) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    const d = s.domiciles.find(item => item.id === domId);
-    if (d) {
-      d.active = !d.active;
-      saveState();
-      renderApp();
-    }
+  function deleteDomicile(id) {
+    if (!confirm("Excluir domicílio?")) return;
+    const s = streets.find(x => x.id === currentStreetId);
+    s.domiciles = s.domiciles.filter(x => x.id !== id);
+    saveState(); renderApp();
   }
-
-  function deleteDomicile(domId) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    if (confirm("Excluir este domicílio e seus moradores?")) {
-      s.domiciles = s.domiciles.filter(d => d.id !== domId);
-      saveState();
-      renderApp();
-    }
-  }
-
-  function openMemberModal(domId, memberId = null) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    const d = s.domiciles.find(item => item.id === domId);
-    if (!d) return;
-
+  function openMemberModal(domId, memId = "") {
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === domId);
+    const m = (d.members || []).find(x => x.id === memId);
     document.getElementById("memberDomId").value = domId;
-    document.getElementById("memberId").value = memberId || "";
-
-    if (memberId) {
-      const m = d.members.find(item => item.id === memberId);
-      document.getElementById("modalMemberTitle").innerText = "Editar Morador";
-      document.getElementById("memberName").value = m.name;
-      document.getElementById("memberDob").value = m.dob;
-      document.getElementById("memberManager").value = m.manager;
-    } else {
-      document.getElementById("modalMemberTitle").innerText = "Adicionar Morador";
-      document.getElementById("memberName").value = "";
-      document.getElementById("memberDob").value = "";
-      document.getElementById("memberManager").value = "";
-    }
-
-    updateMemberAgePreview();
+    document.getElementById("memberId").value = memId;
+    document.getElementById("memberName").value = m ? m.name : "";
+    document.getElementById("memberDob").value = m ? m.dob : "";
+    document.getElementById("memberManager").value = m ? m.manager : "";
     document.getElementById("modalMember").classList.add("open");
-    document.getElementById("memberName").focus();
   }
-
   function saveMember() {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    const domId = document.getElementById("memberDomId").value;
-    const d = s.domiciles.find(item => item.id === domId);
-    if (!d) return;
-
-    const mId = document.getElementById("memberId").value;
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === document.getElementById("memberDomId").value);
+    const memId = document.getElementById("memberId").value;
     const name = document.getElementById("memberName").value.trim();
     const dob = document.getElementById("memberDob").value.trim();
     const manager = document.getElementById("memberManager").value.trim();
-
-    if (!name) {
-      alert("Informe o nome do morador.");
-      return;
-    }
-
-    if (mId) {
-      const m = d.members.find(item => item.id === mId);
-      if (m) {
-        m.name = name;
-        m.dob = dob;
-        m.manager = manager;
-      }
-    } else {
-      d.members.push({
-        id: "mem_" + Date.now(),
-        name,
-        dob,
-        manager,
-        conditions: [],
-        notes: "",
-        active: true
-      });
-    }
-
-    saveState();
-    closeModal("modalMember");
-    renderApp();
+    if (!name) return;
+    if (!d.members) d.members = [];
+    if (memId) { const m = d.members.find(x => x.id === memId); m.name = name; m.dob = dob; m.manager = manager; }
+    else { d.members.push({ id: "mem_" + Date.now(), name, dob, manager, conditions: [], notes: "", active: true }); }
+    saveState(); closeModal("modalMember"); renderApp();
   }
-
-  function toggleMemberActive(domId, memId) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    const d = s.domiciles.find(item => item.id === domId);
-    if (!d) return;
-    const m = d.members.find(item => item.id === memId);
-    if (m) {
-      m.active = !m.active;
-      saveState();
-      renderApp();
-    }
-  }
-
   function deleteMember(domId, memId) {
-    const s = streets.find(item => item.id === currentStreetId);
-    if (!s) return;
-    const d = s.domiciles.find(item => item.id === domId);
-    if (!d) return;
-    if (confirm("Excluir este morador?")) {
-      d.members = d.members.filter(m => m.id !== memId);
-      saveState();
-      renderApp();
-    }
+    if (!confirm("Excluir morador?")) return;
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === domId);
+    d.members = d.members.filter(x => x.id !== memId);
+    saveState(); renderApp();
   }
-
-  function addHealthConditionPrompt(domId, memId) {
-    const cond = prompt("Informe a condição de saúde (Ex: Hipertensão, Diabetes, Gestante, Acamado):");
-    if (cond && cond.trim()) {
-      const s = streets.find(item => item.id === currentStreetId);
-      const d = s.domiciles.find(item => item.id === domId);
-      const m = d.members.find(item => item.id === memId);
-      if (!m.conditions) m.conditions = [];
-      m.conditions.push(cond.trim());
-      saveState();
-      renderApp();
-    }
+  function addCond(domId, memId) {
+    const c = prompt("Condição de Saúde:");
+    if (!c) return;
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === domId);
+    const m = d.members.find(x => x.id === memId);
+    if (!m.conditions) m.conditions = [];
+    m.conditions.push(c.trim());
+    saveState(); renderApp();
   }
-
-  function removeHealthCondition(domId, memId, idx) {
-    const s = streets.find(item => item.id === currentStreetId);
-    const d = s.domiciles.find(item => item.id === domId);
-    const m = d.members.find(item => item.id === memId);
-    if (m && m.conditions) {
-      m.conditions.splice(idx, 1);
-      saveState();
-      renderApp();
-    }
+  function removeCond(domId, memId, idx) {
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === domId);
+    const m = d.members.find(x => x.id === memId);
+    m.conditions.splice(idx, 1);
+    saveState(); renderApp();
   }
-
-  function editNotesPrompt(domId, memId) {
-    const s = streets.find(item => item.id === currentStreetId);
-    const d = s.domiciles.find(item => item.id === domId);
-    const m = d.members.find(item => item.id === memId);
-    const updated = prompt("Observações do paciente:", m.notes || "");
-    if (updated !== null) {
-      m.notes = updated.trim();
-      saveState();
-      renderApp();
-    }
+  function editNote(domId, memId) {
+    const s = streets.find(x => x.id === currentStreetId);
+    const d = s.domiciles.find(x => x.id === domId);
+    const m = d.members.find(x => x.id === memId);
+    const n = prompt("Observações:", m.notes || "");
+    if (n !== null) { m.notes = n; saveState(); renderApp(); }
   }
-
-  // PROCESSADOR DE COLAGEM RÁPIDA
   function processQuickPaste() {
-    const rawInput = document.getElementById("pasteInput").value.trim();
-    if (!rawInput) {
-      alert("Cole uma linha no campo antes de clicar no botão.");
-      return;
-    }
-
-    let dob = "", name = "", manager = "", domNum = "", domCode = "";
-
-    // Padrão Compactado: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768
+    const val = document.getElementById("pasteInput").value.trim();
+    const match = val.match(/^(\d{2}\/\d{2}\/\d{4})(?:\d+a\s*\d+m\s*\d+d)?(\d{6,8})(.*?)(\d{1,5})\s+(\d{4,8})$/i);
+    if (!match) return alert("Formato não reconhecido.");
+    const [, dob, manager, name, domNum, domCode] = match;
+    const s = streets.find(x => x.id === currentStreetId);
+    if (!s.domiciles) s.domiciles = [];
+    let d = s.domiciles.find(x => x.number === domNum.trim());
+    if (!d) { d = { id: "dom_" + Date.now(), number: domNum.trim(), code: domCode.trim(), active: true, members: [] }; s.domiciles.push(d); }
+    if (!d.members) d.members = [];
+    d.members.push({ id: "mem_" + Date.now(), name: name.trim(), dob, manager, conditions: [], notes: "", active: true });
+    document.getElementById("pasteInput").value = "";
+    saveState(); renderApp();
+  }
+</script>
+</body>
+</html>
     const regexCompact = /^(\d{2}\/\d{2}\/\d{4})(?:\d+a\s*\d+m\s*\d+d)?(\d{6,8})(.*?)(\d{1,5})\s+(\d{4,8})$/i;
     const match = rawInput.match(regexCompact);
 
