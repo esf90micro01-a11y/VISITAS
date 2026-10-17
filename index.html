@@ -349,6 +349,34 @@
     }
   </style>
 </head>
+  <!-- Scripts de Ligação ao Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+  // Inicialização da base de dados do seu projeto
+  const firebaseConfig = {
+    databaseURL: "https://visitas-d3689-default-rtdb.firebaseio.com/"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const rtdb = firebase.database();
+
+  // Função para sincronizar dados com o Firebase
+  function sincronizarComFirebase(dados) {
+    rtdb.ref("territorio_saude").set(dados)
+      .then(() => console.log("Dados sincronizados no Firebase com sucesso!"))
+      .catch((erro) => console.error("Erro na sincronização:", erro));
+  }
+
+  // Ouvinte em tempo real: carrega do Firebase se existir
+  rtdb.ref("territorio_saude").on("value", (snapshot) => {
+    const dadosNuvem = snapshot.val();
+    if (dadosNuvem) {
+      streets = dadosNuvem;
+      if (typeof renderApp === "function") renderApp();
+    }
+  });
+</script>
 <body>
 
 <div class="container">
