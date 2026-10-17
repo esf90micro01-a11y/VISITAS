@@ -1,0 +1,95 @@
+[
+  {
+    "id": "street_1",
+    "name": "Rua Rafael Garcia",
+    "section": "Ímpar 101 a 247",
+    "active": true,
+    "domiciles": [
+      {
+        "id": "dom_1",
+        "number": "463",
+        "code": "564768",
+        "active": true,
+        "members": [
+          {
+            "id": "mem_1",
+            "name": "VIVIANE DE MORAIS MATHIAS",
+            "dob": "25/02/1983",
+            "manager": "1021443",
+            "conditions": [
+              "Hipertensão Arterial",
+              "Diabetes Mellitus"
+            ],
+            "notes": "Faz uso regular de Losartana e Metformina. Retorno agendado na UBS.",
+            "active": true
+          },
+          {
+            "id": "mem_2",
+            "name": "LUCAS MORAIS MATHIAS",
+            "dob": "14/08/2012",
+            "manager": "1021443",
+            "conditions": [
+              "Asma Leve"
+            ],
+            "notes": "Calendário vacinal atualizado; sem queixas agudas.",
+            "active": true
+          }
+        ]
+      },
+      {
+        "id": "dom_2",
+        "number": "465",
+        "code": "564772",
+        "active": true,
+        "members": [
+          {
+            "id": "mem_3",
+            "name": "CARLOS EDUARDO SILVA",
+            "dob": "10/05/1975",
+            "manager": "1021443",
+            "conditions": [
+              "Hipertensão Arterial"
+            ],
+            "notes": "Acompanhamento periódico de PA.",
+            "active": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "street_2",
+    "name": "Rua Rafael Garcia",
+    "section": "Par 212 a 248",
+    "active": true,
+    "domiciles": [
+      {
+        "id": "dom_3",
+        "number": "214",
+        "code": "564810",
+        "active": true,
+        "members": [
+          {
+            "id": "mem_4",
+            "name": "MARIA APARECIDA SANTOS",
+            "dob": "03/11/1960",
+            "manager": "1021890",
+            "conditions": [
+              "Diabetes Mellitus",
+              "Acamado"
+            ],
+            "notes": "Necessita de visita domiciliar mensal para curativo e aferição.",
+            "active": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "street_3",
+    "name": "Rua Pioneiro João Dias",
+    "section": "Geral",
+    "active": true,
+    "domiciles": []
+  }
+]
