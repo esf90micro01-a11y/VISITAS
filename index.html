@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestão Territorial e Fichas Domiciliares</title>
-  <!-- Scripts do Firebase -->
+  
+  <!-- Scripts do Firebase compatíveis direto com HTML / GitHub Pages -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
   <style>
     :root {
       --primary: #1e3a8a;
@@ -21,8 +23,8 @@
     body { background-color: #f8fafc; color: var(--text); padding: 16px; }
     .container { max-width: 1200px; margin: 0 auto; }
     header { background: white; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    h1 { font-size: 1.25rem; color: var(--primary); }
-    .sync-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 999px; font-weight: 600; background: #dcfce7; color: #166534; }
+    h1 { font-size: 1.25rem; color: var(--primary); margin-bottom: 4px; }
+    .sync-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 999px; font-weight: 600; background: #fef3c7; color: #92400e; display: inline-block; }
     .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid transparent; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-secondary { background: white; border-color: var(--border-color); color: var(--text); }
@@ -34,6 +36,7 @@
     .tabs-wrapper { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; padding-bottom: 4px; }
     .tab-item { padding: 8px 16px; background: #e2e8f0; border: 1px solid var(--border-color); border-bottom: none; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
     .tab-item.active { background: white; color: var(--primary); border-top: 3px solid var(--primary); font-weight: 700; }
+    .tab-item.inactive { opacity: 0.6; border-left: 3px solid var(--warning); }
     .street-toolbar { background: white; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .domicile-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
     .domicile-header { background: #f1f5f9; border-bottom: 1px solid var(--border-color); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -42,6 +45,7 @@
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th { background: #f8fafc; color: var(--muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
     td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    .row-inactive { opacity: 0.5; background: #fef2f2; }
     .row-health, .row-notes { background: #fafafa; }
     .row-notes { border-bottom: 2px solid #cbd5e1; }
     .tag { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; display: inline-block; }
@@ -52,365 +56,4 @@
     .modal-overlay.open { display: flex; }
     .modal-box { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 440px; }
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
-    .form-group input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; }
-    @media print { .no-print, button { display: none !important; } .domicile-card { page-break-inside: avoid; border: 1px solid #000; } }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <header>
-    <div>
-      <h1>Cadastro Territorial & Fichas Domiciliares</h1>
-      <span id="syncStatus" class="sync-badge">🔄 Conectando ao Firebase...</span>
-    </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="no-print">
-      <select id="filterCondition" onchange="renderApp()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
-        <option value="">🩺 Todas as Condições</option>
-      </select>
-      <select id="filterStatus" onchange="renderApp()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
-        <option value="ativos">🟢 Apenas Ativos</option>
-        <option value="todos">👁️ Todos (Com Inativos)</option>
-      </select>
-      <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
-    </div>
-  </header>
-
-  <div class="paste-card no-print">
-    <strong style="font-size: 0.85rem; color: var(--primary);">📋 Colagem Rápida Inteligente</strong>
-    <div class="paste-form">
-      <input type="text" id="pasteInput" placeholder="Cole aqui: 25/02/198343a 7m 19d1021443VIVIANE DE MORAIS MATHIAS463 564768">
-      <button class="btn btn-primary btn-sm" onclick="processQuickPaste()">Inserir</button>
-    </div>
-  </div>
-
-  <div class="tabs-wrapper" id="tabsList"></div>
-  <div class="street-toolbar" id="streetToolbar"></div>
-  <div id="domicilesList"></div>
-</div>
-
-<!-- MODAL RUA -->
-<div class="modal-overlay" id="modalStreet">
-  <div class="modal-box">
-    <h3 id="modalStreetTitle" style="margin-bottom:12px;">Rua / Trecho</h3>
-    <input type="hidden" id="streetId">
-    <div class="form-group"><label>Nome da Rua</label><input type="text" id="streetName"></div>
-    <div class="form-group"><label>Identificação / Trecho</label><input type="text" id="streetSection" placeholder="Ex: Ímpar 101 a 247"></div>
-    <div style="text-align:right; gap:8px;">
-      <button class="btn btn-secondary" onclick="closeModal('modalStreet')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveStreet()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DOMICÍLIO -->
-<div class="modal-overlay" id="modalDomicile">
-  <div class="modal-box">
-    <h3 style="margin-bottom:12px;">Domicílio</h3>
-    <input type="hidden" id="domicileId">
-    <div class="form-group"><label>Nº do Domicílio</label><input type="text" id="domicileNumber"></div>
-    <div class="form-group"><label>Código e-SUS</label><input type="text" id="domicileCode"></div>
-    <div style="text-align:right;">
-      <button class="btn btn-secondary" onclick="closeModal('modalDomicile')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveDomicile()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL MORADOR -->
-<div class="modal-overlay" id="modalMember">
-  <div class="modal-box">
-    <h3 style="margin-bottom:12px;">Morador</h3>
-    <input type="hidden" id="memberDomId"><input type="hidden" id="memberId">
-    <div class="form-group"><label>Nome Completo</label><input type="text" id="memberName"></div>
-    <div class="form-group"><label>Data de Nascimento (DD/MM/AAAA)</label><input type="text" id="memberDob"></div>
-    <div class="form-group"><label>Gestor</label><input type="text" id="memberManager"></div>
-    <div style="text-align:right;">
-      <button class="btn btn-secondary" onclick="closeModal('modalMember')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveMember()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  // CONEXÃO DIRETA COM O SEU FIREBASE (visitas-d3689)
-  const firebaseConfig = {
-    databaseURL: "https://visitas-d3689-default-rtdb.firebaseio.com/"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const dbRef = firebase.database().ref("territorio_saude");
-
-  const INITIAL_DATA = [
-    {
-      id: "street_1", name: "Rua Rafael Garcia", section: "Ímpar 101 a 247", active: true,
-      domiciles: [{
-        id: "dom_1", number: "463", code: "564768", active: true,
-        members: [{
-          id: "mem_1", name: "VIVIANE DE MORAIS MATHIAS", dob: "25/02/1983", manager: "1021443",
-          conditions: ["Hipertensão Arterial"], notes: "Acompanhamento regular.", active: true
-        }]
-      }]
-    }
-  ];
-
-  let streets = [];
-  let currentStreetId = null;
-
-  // Escuta alterações em tempo real do Firebase
-  dbRef.on("value", (snapshot) => {
-    const data = snapshot.val();
-    const badge = document.getElementById("syncStatus");
-    if (data && Array.isArray(data)) {
-      streets = data;
-      badge.innerText = "☁️ Sincronizado com Firebase";
-      badge.style.background = "#dcfce7";
-    } else {
-      streets = INITIAL_DATA;
-      saveState();
-    }
-    if (!currentStreetId && streets.length > 0) currentStreetId = streets[0].id;
-    renderApp();
-  }, (err) => {
-    document.getElementById("syncStatus").innerText = "⚠️ Erro Permissão Firebase (Verifique Regras)";
-    document.getElementById("syncStatus").style.background = "#fee2e2";
-  });
-
-  function saveState() {
-    localStorage.setItem("territorial_backup", JSON.stringify(streets));
-    dbRef.set(streets);
-  }
-
-  function calculateAge(dobStr) {
-    if (!dobStr || !dobStr.includes("/")) return "-";
-    const [d, m, y] = dobStr.split("/").map(Number);
-    const birth = new Date(y, m - 1, d);
-    if (isNaN(birth)) return "-";
-    const today = new Date();
-    let years = today.getFullYear() - birth.getFullYear();
-    let months = today.getMonth() - birth.getMonth();
-    let days = today.getDate() - birth.getDate();
-    if (days < 0) { months--; days += new Date(today.getFullYear(), today.getMonth(), 0).getDate(); }
-    if (months < 0) { years--; months += 12; }
-    return `${years}a ${months}m ${days}d`;
-  }
-
-  function renderApp() {
-    const filter = document.getElementById("filterStatus").value;
-    const condFilter = document.getElementById("filterCondition").value;
-    const tabsList = document.getElementById("tabsList");
-    const streetToolbar = document.getElementById("streetToolbar");
-    const domicilesList = document.getElementById("domicilesList");
-
-    tabsList.innerHTML = ""; streetToolbar.innerHTML = ""; domicilesList.innerHTML = "";
-
-    streets.forEach(st => {
-      if (!st.domiciles) st.domiciles = [];
-      if (filter === "ativos" && !st.active) return;
-      const tab = document.createElement("div");
-      tab.className = `tab-item ${st.id === currentStreetId ? "active" : ""}`;
-      tab.innerText = st.section ? `📁 ${st.name} (${st.section})` : `📁 ${st.name}`;
-      tab.onclick = () => { currentStreetId = st.id; renderApp(); };
-      tabsList.appendChild(tab);
-    });
-
-    const addBtn = document.createElement("button");
-    addBtn.className = "btn btn-secondary btn-sm no-print";
-    addBtn.innerText = "➕ Nova Rua";
-    addBtn.onclick = () => openStreetModal();
-    tabsList.appendChild(addBtn);
-
-    const currentStreet = streets.find(s => s.id === currentStreetId);
-    if (!currentStreet) return;
-
-    // Atualiza lista de condições da rua para o filtro
-    const allConditions = new Set();
-    currentStreet.domiciles.forEach(d => (d.members || []).forEach(m => (m.conditions || []).forEach(c => allConditions.add(c))));
-    const selCond = document.getElementById("filterCondition");
-    selCond.innerHTML = '<option value="">🩺 Todas as Condições</option>';
-    allConditions.forEach(c => {
-      selCond.innerHTML += `<option value="${c}" ${c === condFilter ? "selected" : ""}>${c}</option>`;
-    });
-
-    streetToolbar.innerHTML = `
-      <strong>📍 ${currentStreet.name} ${currentStreet.section ? `(${currentStreet.section})` : ""}</strong>
-      <div class="no-print" style="display:flex; gap:6px;">
-        <button class="btn btn-primary btn-sm" onclick="openDomicileModal()">🏠 Novo Domicílio</button>
-        <button class="btn btn-secondary btn-sm" onclick="openStreetModal('${currentStreet.id}')">✏️ Editar Rua</button>
-      </div>
-    `;
-
-    currentStreet.domiciles.forEach(dom => {
-      if (!dom.members) dom.members = [];
-      if (filter === "ativos" && !dom.active) return;
-
-      const visibleMembers = dom.members.filter(m => {
-        if (filter === "ativos" && !m.active) return false;
-        if (condFilter && !(m.conditions || []).includes(condFilter)) return false;
-        return true;
-      });
-
-      if (condFilter && visibleMembers.length === 0) return;
-
-      const card = document.createElement("div");
-      card.className = "domicile-card";
-      card.innerHTML = `
-        <div class="domicile-header">
-          <div>
-            <span class="dom-badge">🏠 DOMICÍLIO Nº: ${dom.number}</span>
-            <span class="dom-subbadge">CÓD. e-SUS: ${dom.code || "-"}</span>
-          </div>
-          <div class="no-print">
-            <button class="btn btn-primary btn-sm" onclick="openMemberModal('${dom.id}')">➕ Morador</button>
-            <button class="btn btn-secondary btn-sm" onclick="openDomicileModal('${dom.id}')">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteDomicile('${dom.id}')">🗑️</button>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr><th style="width:120px;">Data Nasc.</th><th style="width:120px;">Idade</th><th style="width:100px;">Gestor</th><th>Nome Completo</th><th style="width:90px;text-align:right;" class="no-print">Ações</th></tr>
-          </thead>
-          <tbody id="tb_${dom.id}"></tbody>
-        </table>
-        <div class="family-signature">
-          <div class="sig-line">ASSINATURA DO RESPONSÁVEL FAMILIAR (Domicílio Nº ${dom.number})</div>
-          <div class="sig-date">Data: ____/____/202___</div>
-        </div>
-      `;
-      domicilesList.appendChild(card);
-
-      const tbody = card.querySelector(`#tb_${dom.id}`);
-      visibleMembers.forEach(m => {
-        const tags = (m.conditions || []).map((c, idx) => `<span class="tag">${c} <b style="cursor:pointer;" onclick="removeCond('${dom.id}','${m.id}',${idx})">✕</b></span>`).join("");
-        tbody.innerHTML += `
-          <tr>
-            <td><b>${m.dob}</b></td>
-            <td>${calculateAge(m.dob)}</td>
-            <td>${m.manager}</td>
-            <td><b>${m.name}</b></td>
-            <td style="text-align:right;" class="no-print">
-              <button class="btn btn-secondary btn-sm" onclick="openMemberModal('${dom.id}','${m.id}')">✏️</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteMember('${dom.id}','${m.id}')">🗑️</button>
-            </td>
-          </tr>
-          <tr class="row-health"><td colspan="5">🩺 <b>Condições:</b> ${tags || "Nenhuma"} <button class="btn btn-secondary btn-sm no-print" onclick="addCond('${dom.id}','${m.id}')">➕</button></td></tr>
-          <tr class="row-notes"><td colspan="5">📝 <b>Obs:</b> ${m.notes || "-"} <button class="btn btn-secondary btn-sm no-print" onclick="editNote('${dom.id}','${m.id}')">✏️</button></td></tr>
-        `;
-      });
-    });
-  }
-
-  function closeModal(id) { document.getElementById(id).classList.remove("open"); }
-  function openStreetModal(id = "") {
-    const s = streets.find(x => x.id === id);
-    document.getElementById("streetId").value = id;
-    document.getElementById("streetName").value = s ? s.name : "";
-    document.getElementById("streetSection").value = s ? s.section : "";
-    document.getElementById("modalStreet").classList.add("open");
-  }
-  function saveStreet() {
-    const id = document.getElementById("streetId").value;
-    const name = document.getElementById("streetName").value.trim();
-    const section = document.getElementById("streetSection").value.trim();
-    if (!name) return;
-    if (id) { const s = streets.find(x => x.id === id); s.name = name; s.section = section; }
-    else { const ns = { id: "st_" + Date.now(), name, section, active: true, domiciles: [] }; streets.push(ns); currentStreetId = ns.id; }
-    saveState(); closeModal("modalStreet"); renderApp();
-  }
-  function openDomicileModal(id = "") {
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === id);
-    document.getElementById("domicileId").value = id;
-    document.getElementById("domicileNumber").value = d ? d.number : "";
-    document.getElementById("domicileCode").value = d ? d.code : "";
-    document.getElementById("modalDomicile").classList.add("open");
-  }
-  function saveDomicile() {
-    const s = streets.find(x => x.id === currentStreetId);
-    const id = document.getElementById("domicileId").value;
-    const number = document.getElementById("domicileNumber").value.trim();
-    const code = document.getElementById("domicileCode").value.trim();
-    if (!number) return;
-    if (!s.domiciles) s.domiciles = [];
-    if (id) { const d = s.domiciles.find(x => x.id === id); d.number = number; d.code = code; }
-    else { s.domiciles.push({ id: "dom_" + Date.now(), number, code, active: true, members: [] }); }
-    saveState(); closeModal("modalDomicile"); renderApp();
-  }
-  function deleteDomicile(id) {
-    if (!confirm("Excluir domicílio?")) return;
-    const s = streets.find(x => x.id === currentStreetId);
-    s.domiciles = s.domiciles.filter(x => x.id !== id);
-    saveState(); renderApp();
-  }
-  function openMemberModal(domId, memId = "") {
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === domId);
-    const m = (d.members || []).find(x => x.id === memId);
-    document.getElementById("memberDomId").value = domId;
-    document.getElementById("memberId").value = memId;
-    document.getElementById("memberName").value = m ? m.name : "";
-    document.getElementById("memberDob").value = m ? m.dob : "";
-    document.getElementById("memberManager").value = m ? m.manager : "";
-    document.getElementById("modalMember").classList.add("open");
-  }
-  function saveMember() {
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === document.getElementById("memberDomId").value);
-    const memId = document.getElementById("memberId").value;
-    const name = document.getElementById("memberName").value.trim();
-    const dob = document.getElementById("memberDob").value.trim();
-    const manager = document.getElementById("memberManager").value.trim();
-    if (!name) return;
-    if (!d.members) d.members = [];
-    if (memId) { const m = d.members.find(x => x.id === memId); m.name = name; m.dob = dob; m.manager = manager; }
-    else { d.members.push({ id: "mem_" + Date.now(), name, dob, manager, conditions: [], notes: "", active: true }); }
-    saveState(); closeModal("modalMember"); renderApp();
-  }
-  function deleteMember(domId, memId) {
-    if (!confirm("Excluir morador?")) return;
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === domId);
-    d.members = d.members.filter(x => x.id !== memId);
-    saveState(); renderApp();
-  }
-  function addCond(domId, memId) {
-    const c = prompt("Condição de Saúde:");
-    if (!c) return;
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === domId);
-    const m = d.members.find(x => x.id === memId);
-    if (!m.conditions) m.conditions = [];
-    m.conditions.push(c.trim());
-    saveState(); renderApp();
-  }
-  function removeCond(domId, memId, idx) {
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === domId);
-    const m = d.members.find(x => x.id === memId);
-    m.conditions.splice(idx, 1);
-    saveState(); renderApp();
-  }
-  function editNote(domId, memId) {
-    const s = streets.find(x => x.id === currentStreetId);
-    const d = s.domiciles.find(x => x.id === domId);
-    const m = d.members.find(x => x.id === memId);
-    const n = prompt("Observações:", m.notes || "");
-    if (n !== null) { m.notes = n; saveState(); renderApp(); }
-  }
-  function processQuickPaste() {
-    const val = document.getElementById("pasteInput").value.trim();
-    const match = val.match(/^(\d{2}\/\d{2}\/\d{4})(?:\d+a\s*\d+m\s*\d+d)?(\d{6,8})(.*?)(\d{1,5})\s+(\d{4,8})$/i);
-    if (!match) return alert("Formato não reconhecido.");
-    const [, dob, manager, name, domNum, domCode] = match;
-    const s = streets.find(x => x.id === currentStreetId);
-    if (!s.domiciles) s.domiciles = [];
-    let d = s.domiciles.find(x => x.number === domNum.trim());
-    if (!d) { d = { id: "dom_" + Date.now(), number: domNum.trim(), code: domCode.trim(), active: true, members: [] }; s.domiciles.push(d); }
-    if (!d.members) d.members = [];
-    d.members.push({ id: "mem_" + Date.now(), name: name.trim(), dob, manager, conditions: [], notes: "", active: true });
-    document.getElementById("pasteInput").value = "";
-    saveState(); renderApp();
-  }
-</script>
-</body>
-</html>
+    .form-group label { display: block; font-size: 0.8rem; font-weight:
